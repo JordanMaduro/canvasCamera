@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
-        id="com.jordanmaduro.cordova.plugin.canvascamera"
+        id="com.jordanmaduro.cordova.plugin.canvascamera2"
         version="1.0">
 
     <name>CanvasCamera</name>
