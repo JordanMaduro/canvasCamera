@@ -11,7 +11,7 @@
     <keywords>camera, canvas camera, take photos</keywords>
     <license>Apache 2.0</license>
 
-    <author>Matias Narigueta Arau (FROM CHILE)</author>
+    <author>Jordan Maduro</author>
 
     <engines>
         <engine name="cordova" version=">=3.0.0" />
