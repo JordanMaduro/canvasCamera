@@ -94,7 +94,7 @@ typedef enum {
     
     // add support for options (fps, capture quality, capture format, etc.)
     self.session = [[AVCaptureSession alloc] init];
-    self.session.sessionPreset = AVCaptureSessionPreset352x288; //AVCaptureSessionPresetLow; //AVCaptureSessionPresetPhoto;
+    self.session.sessionPreset = AVCaptureSessionPresetLow; //AVCaptureSessionPreset352x288; //AVCaptureSessionPresetLow; //AVCaptureSessionPresetPhoto;
     
     self.device = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
     self.input = [AVCaptureDeviceInput deviceInputWithDevice:self.device error:nil];
@@ -514,7 +514,7 @@ typedef enum {
         UIImage *image = [UIImage imageWithCGImage:newImage];
         
         // resize image
-        image = [CanvasCamera resizeImage:image toSize:CGSizeMake(352.0, 288.0)];
+        //image = [CanvasCamera resizeImage:image toSize:CGSizeMake(352.0, 288.0)];
         
         NSData *imageData = UIImageJPEGRepresentation(image, 1.0);
 #if 0
