@@ -94,7 +94,7 @@ typedef enum {
     
     // add support for options (fps, capture quality, capture format, etc.)
     self.session = [[AVCaptureSession alloc] init];
-    self.session.sessionPreset = AVCaptureSessionPresetHigh; //AVCaptureSessionPreset352x288; //AVCaptureSessionPresetLow; //AVCaptureSessionPresetPhoto;
+    self.session.sessionPreset = AVCaptureSessionPresetMedium; //AVCaptureSessionPreset352x288; //AVCaptureSessionPresetLow; //AVCaptureSessionPresetPhoto;
     
     self.device = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
     self.input = [AVCaptureDeviceInput deviceInputWithDevice:self.device error:nil];
