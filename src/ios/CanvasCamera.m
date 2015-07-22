@@ -99,13 +99,7 @@ typedef enum {
     self.device = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
     self.input = [AVCaptureDeviceInput deviceInputWithDevice:self.device error:nil];
     
-	 if ([self.device lockForConfiguration:&error]){
-	        [self.device rampToVideoZoomFactor:2 withRate:1];
-	
-	        [self.device unlockForConfiguration];
-	   } else {
-	        NSLog(@"%@", error);
-	}
+
 
     
     self.output = [[AVCaptureVideoDataOutput alloc] init];
@@ -130,6 +124,12 @@ typedef enum {
     [self.session startRunning];
     
     bIsStarted = YES;
+    
+     if ([self.device lockForConfiguration:nil]){
+        [self.device rampToVideoZoomFactor:2 withRate:1];
+
+        [self.device unlockForConfiguration];
+   }
     
     
     // success callback
