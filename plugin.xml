@@ -2,7 +2,7 @@
 
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
         id="com.jordanmaduro.cordova.plugin.canvascamera2"
-        version="1.0.7">
+        version="1.0.8">
 
     <name>CanvasCamera</name>
 
