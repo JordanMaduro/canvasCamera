@@ -99,19 +99,14 @@ typedef enum {
     self.device = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
     self.input = [AVCaptureDeviceInput deviceInputWithDevice:self.device error:nil];
     
-     dispatch_async(self.sessionQueue, ^{
-	 NSError *error = nil;
-	 if ([self.device lockForConfiguration:&error])
-	    {
+	 if ([self.device lockForConfiguration:&error]){
 	        [self.device rampToVideoZoomFactor:2 withRate:1];
 	
 	        [self.device unlockForConfiguration];
-	    }
-	 else
-	    {
+	   } else {
 	        NSLog(@"%@", error);
-	    }
-	});
+	}
+
     
     self.output = [[AVCaptureVideoDataOutput alloc] init];
     self.output.videoSettings = [NSDictionary dictionaryWithObject:[NSNumber numberWithInt:kCVPixelFormatType_32BGRA] forKey:(id)kCVPixelBufferPixelFormatTypeKey];
