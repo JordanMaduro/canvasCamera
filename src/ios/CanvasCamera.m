@@ -124,13 +124,13 @@ typedef enum {
     [self.session startRunning];
     
     bIsStarted = YES;
-    
+    /*
      if ([self.device lockForConfiguration:nil]){
         [self.device rampToVideoZoomFactor:2 withRate:1];
 
         [self.device unlockForConfiguration];
    }
-    
+    */
     
     // success callback
     pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@""];
