@@ -670,7 +670,7 @@ typedef enum {
         _quality = [obj intValue];
         
     // compression
-    NSString *obj = [jsonData objectForKey:kCompression];
+    obj = [jsonData objectForKey:kCompression];
     if (obj != nil)
         _compression = [obj intValue];
     
