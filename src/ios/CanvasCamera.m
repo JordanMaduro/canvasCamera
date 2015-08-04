@@ -525,7 +525,7 @@ typedef enum {
         // resize image
         image = [CanvasCamera resizeImage:image toSize:CGSizeMake(704.0, 576.0)];
         
-        NSData *imageData = UIImageJPEGRepresentation(image, 1.0);
+        NSData *imageData = UIImageJPEGRepresentation(image, 0.5);
 #if 0
         //NSString *encodedString = [imageData base64Encoding];
         NSString *encodedString = [imageData base64EncodedStringWithOptions:0];
