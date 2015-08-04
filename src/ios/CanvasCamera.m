@@ -24,6 +24,7 @@ typedef enum {
 
 // parameter
 #define kQualityKey         @"quality"
+#define kCompression        @"compression"
 #define kDestinationTypeKey @"destinationType"
 #define kEncodingTypeKey    @"encodingType"
 
@@ -44,6 +45,7 @@ typedef enum {
     
     // options
     int _quality;
+    int _compression;
     DestinationType _destType;
     //BOOL _allowEdit;
     EncodingType _encodeType;
@@ -78,6 +80,7 @@ typedef enum {
     
     // init parameters - default values
     _quality = 85;
+    _compression = 90;
     _destType = DestinationTypeFileURI;
     _encodeType = EncodingTypeJPEG;
     _width = 640;
@@ -525,7 +528,7 @@ typedef enum {
         // resize image
         image = [CanvasCamera resizeImage:image toSize:CGSizeMake(704.0, 576.0)];
         
-        NSData *imageData = UIImageJPEGRepresentation(image, 0.5);
+        NSData *imageData = UIImageJPEGRepresentation(image, (_compression / 100.0));
 #if 0
         //NSString *encodedString = [imageData base64Encoding];
         NSString *encodedString = [imageData base64EncodedStringWithOptions:0];
@@ -665,6 +668,11 @@ typedef enum {
     NSString *obj = [jsonData objectForKey:kQualityKey];
     if (obj != nil)
         _quality = [obj intValue];
+        
+    // compression
+    NSString *obj = [jsonData objectForKey:kCompression];
+    if (obj != nil)
+        _compression = [obj intValue];
     
     // destination type
     obj = [jsonData objectForKey:kDestinationTypeKey];
