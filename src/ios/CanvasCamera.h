@@ -22,6 +22,7 @@
 @property (nonatomic, strong) AVCaptureVideoDataOutput *output;
 @property (nonatomic, strong) AVCaptureStillImageOutput *stillImageOutput;
 
+- (void) getAdvancedOptions: (NSDictionary *) jsonData :(NSDictionary *) mapping;
 
 - (void)startCapture:(CDVInvokedUrlCommand *)command;
 - (void)stopCapture:(CDVInvokedUrlCommand *)command;

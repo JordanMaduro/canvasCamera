@@ -43,6 +43,8 @@ typedef enum {
     AVCaptureFlashMode          _flashMode;
     AVCaptureDevicePosition     _devicePosition;
     
+    NSDictionary *_advancedOptions;
+    
     // options
     int _quality;
     int _compression;
@@ -88,16 +90,28 @@ typedef enum {
     _saveToPhotoAlbum = NO;
     _correctOrientation = YES;
     
+    NSDictionary * defaultAdvanced = @{
+        @"cameraWidth":@704.0,
+        @"cameraHeight":@576.0
+    };
+    
+    
     // parse options
     if ([command.arguments count] > 0)
     {
         NSDictionary *jsonData = [command.arguments objectAtIndex:0];
         [self getOptions:jsonData];
+        
+        [self getAdvancedOptions:jsonData[@"advanced"] : defaultAdvanced];
+        
     }
     
     // add support for options (fps, capture quality, capture format, etc.)
     self.session = [[AVCaptureSession alloc] init];
     self.session.sessionPreset = AVCaptureSessionPresetPhoto; //AVCaptureSessionPreset352x288; //AVCaptureSessionPresetLow; //AVCaptureSessionPresetPhoto;
+    
+    self.session.sessionPreset = AVCaptureSessionPresetHigh;
+    
     
     self.device = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
     self.input = [AVCaptureDeviceInput deviceInputWithDevice:self.device error:nil];
@@ -526,7 +540,9 @@ typedef enum {
         UIImage *image = [UIImage imageWithCGImage:newImage];
         
         // resize image
-        image = [CanvasCamera resizeImage:image toSize:CGSizeMake(704.0, 576.0)];
+        image = [CanvasCamera resizeImage:image toSize:CGSizeMake([_advancedOptions[@"cameraWidth"] floatValue], [_advancedOptions[@"cameraHeight"] floatValue])];
+        
+        NSLog(@"Hello Color: %@", _advancedOptions);
         
         NSData *imageData = UIImageJPEGRepresentation(image, (_compression / 100.0));
 #if 0
@@ -652,11 +668,32 @@ typedef enum {
     return dataPath;
 }
 
+
+- (void) getAdvancedOptions: (NSDictionary *) jsonData :(NSDictionary *) mapping;
+{
+    NSLog(@"Does not workd ");
+    //if (![jsonData isKindOfClass:[NSDictionary class]] || ![jsonData isKindOfClass:[NSDictionary class]]) {
+      //  return;
+    //}
+    
+    NSMutableDictionary *advancedOptions = [[NSMutableDictionary alloc] init];
+    
+    for (NSString *option in mapping) {
+        if (jsonData[option]) {
+            [advancedOptions setObject:jsonData[option] forKey:option];
+        } else {
+            [advancedOptions setObject:mapping[option] forKey:option];
+        }
+    }
+    
+    _advancedOptions = [NSDictionary dictionaryWithDictionary:advancedOptions];
+}
+
+
 /**
  * parse options parameter and set it to local variables
  *
  */
-
 - (void)getOptions: (NSDictionary *)jsonData
 {
     if (![jsonData isKindOfClass:[NSDictionary class]])
@@ -664,11 +701,17 @@ typedef enum {
     
     // get parameters from argument.
     
+    
     // quaility
     NSString *obj = [jsonData objectForKey:kQualityKey];
     if (obj != nil)
         _quality = [obj intValue];
-        
+    
+    _advancedOptions = [NSDictionary dictionaryWithDictionary:[jsonData objectForKey:@"advanced"]];
+    
+    NSLog(@"Hello Color: %@", _advancedOptions);
+    
+    
     // compression
     obj = [jsonData objectForKey:kCompression];
     if (obj != nil)
