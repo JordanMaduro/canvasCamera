@@ -22,6 +22,8 @@
 @property (nonatomic, strong) AVCaptureVideoDataOutput *output;
 @property (nonatomic, strong) AVCaptureStillImageOutput *stillImageOutput;
 
+- (void)setZoomRatio:(CDVInvokedUrlCommand *)command;
+
 - (void) getAdvancedOptions: (NSDictionary *) jsonData :(NSDictionary *) mapping;
 
 - (void)startCapture:(CDVInvokedUrlCommand *)command;

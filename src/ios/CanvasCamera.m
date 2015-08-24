@@ -8,6 +8,7 @@
 
 #import "CanvasCamera.h"
 #import <MobileCoreServices/MobileCoreServices.h>
+#import <AVFoundation/AVFoundation.h>
 
 typedef enum {
     DestinationTypeDataURL = 0,
@@ -48,6 +49,7 @@ typedef enum {
     // options
     int _quality;
     int _compression;
+    float _zoomRatio;
     DestinationType _destType;
     //BOOL _allowEdit;
     EncodingType _encodeType;
@@ -82,7 +84,8 @@ typedef enum {
     
     // init parameters - default values
     _quality = 85;
-    _compression = 90;
+    _compression = 69;
+    _zoomRatio = 1;
     _destType = DestinationTypeFileURI;
     _encodeType = EncodingTypeJPEG;
     _width = 640;
@@ -102,7 +105,7 @@ typedef enum {
         NSDictionary *jsonData = [command.arguments objectAtIndex:0];
         [self getOptions:jsonData];
         
-        [self getAdvancedOptions:jsonData[@"advanced"] : defaultAdvanced];
+        [self getAdvancedOptions:([jsonData objectForKey:@"advanced"] ? jsonData[@"advanced"] : @{}) : defaultAdvanced];
         
     }
     
@@ -110,17 +113,40 @@ typedef enum {
     self.session = [[AVCaptureSession alloc] init];
     self.session.sessionPreset = AVCaptureSessionPresetPhoto; //AVCaptureSessionPreset352x288; //AVCaptureSessionPresetLow; //AVCaptureSessionPresetPhoto;
     
-    self.session.sessionPreset = AVCaptureSessionPresetHigh;
+    self.session.sessionPreset = AVCaptureSessionPreset640x480; // best for now
+  // self.session.sessionPreset = AVCaptureSessionPresetPhoto;
     
     
     self.device = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
     self.input = [AVCaptureDeviceInput deviceInputWithDevice:self.device error:nil];
     
 
+    
+    for (AVCaptureDeviceFormat *mat in self.device.formats)
+    {
+        NSLog(@"Format: %@", [mat description]);
+        
+    }
+    NSLog(@"Current Format: %@", [self.device.activeFormat description]);
+    
+    if ([self.device lockForConfiguration:nil]){
+        
+        //self.device.activeVideoMinFrameDuration = CMTimeMake(1, 30);
+        
+        
+        [self.device unlockForConfiguration];
+    }
 
     
+    
     self.output = [[AVCaptureVideoDataOutput alloc] init];
+    
+    self.output.alwaysDiscardsLateVideoFrames = YES;
+    
+
+    
     self.output.videoSettings = [NSDictionary dictionaryWithObject:[NSNumber numberWithInt:kCVPixelFormatType_32BGRA] forKey:(id)kCVPixelBufferPixelFormatTypeKey];
+    
     
     self.stillImageOutput = [[AVCaptureStillImageOutput alloc] init];
     NSDictionary *outputSettings = @{ AVVideoCodecKey : AVVideoCodecJPEG};
@@ -141,13 +167,14 @@ typedef enum {
     [self.session startRunning];
     
     bIsStarted = YES;
-    /*
+    
      if ([self.device lockForConfiguration:nil]){
-        [self.device rampToVideoZoomFactor:2 withRate:1];
+        //[self.device rampToVideoZoomFactor:2 withRate:0.25];
+         //self.device.videoZoomFactor = 2;
 
         [self.device unlockForConfiguration];
-   }
-    */
+     }
+    
     
     // success callback
     pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@""];
@@ -182,6 +209,99 @@ typedef enum {
         [self writeJavascript:resultJS];
     }
 }
+
+
+- (void)setZoomRatio:(CDVInvokedUrlCommand *)command
+{
+    
+    CDVPluginResult *pluginResult = nil;
+    NSString *resultJS = nil;
+    
+    NSString *errMsg = @"";
+    BOOL bParsed = NO;
+    if (command.arguments.count <= 0)
+    {
+        bParsed = NO;
+        errMsg = @"Please Specify Zoom Ratio!";
+    }
+    else
+    {
+        NSString *intZoomRatio = [command.arguments objectAtIndex:0];
+        float zoomRatio = [intZoomRatio floatValue];
+       // NSLog(@"Requested Zoom %f", zoomRatio);
+       // NSLog(@"Max Zoom Factor: %f",self.device.activeFormat.videoMaxZoomFactor);
+      //  NSLog(@"Max Zoom Factor Upscale Threshold: %f",self.device.activeFormat.videoZoomFactorUpscaleThreshold);
+        if (zoomRatio > self.device.activeFormat.videoZoomFactorUpscaleThreshold)
+        {
+            //   zoomRatio = self.device.activeFormat.videoZoomFactorUpscaleThreshold;
+        }
+        
+        if (zoomRatio < 1)
+        {
+            bParsed = NO;
+            errMsg = @"Invalid parameter";
+        }
+        else
+        {
+            _zoomRatio = zoomRatio;
+            bParsed = YES;
+        }
+    }
+    
+    
+    if (bParsed)
+    {
+        BOOL bSuccess = NO;
+        // check session is started
+        if (bIsStarted && self.session)
+        {
+            if (self.device.activeFormat.videoMaxZoomFactor != 1)
+            {
+                [self.device lockForConfiguration:nil];
+            
+                [self.device rampToVideoZoomFactor:_zoomRatio withRate:4];
+                //self.device.videoZoomFactor = _zoomRatio;
+                
+                [self.device unlockForConfiguration];
+                
+                bSuccess = YES;
+            }
+            else
+            {
+                bSuccess = NO;
+                errMsg = @"This device cant zoom";
+            }
+        }
+        else
+        {
+            bSuccess = NO;
+            errMsg = @"Session is not started";
+        }
+        
+        if (bSuccess)
+        {
+            // success callback
+            pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@""];
+            resultJS = [pluginResult toSuccessCallbackString:command.callbackId];
+            [self writeJavascript:resultJS];
+        }
+        else
+        {
+            pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:errMsg];
+            resultJS = [pluginResult toErrorCallbackString:command.callbackId];
+            [self writeJavascript:resultJS];
+        }
+    }
+    else
+    {
+        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:errMsg];
+        resultJS = [pluginResult toErrorCallbackString:command.callbackId];
+        [self writeJavascript:resultJS];
+    }
+}
+
+
+
 
 - (void)setFlashMode:(CDVInvokedUrlCommand *)command
 {
@@ -532,18 +652,62 @@ typedef enum {
         CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
         CGContextRef newContext = CGBitmapContextCreate(baseAddress, width, height, 8, bytesPerRow, colorSpace, kCGBitmapByteOrder32Little | kCGImageAlphaPremultipliedFirst);
         
-        CGImageRef newImage = CGBitmapContextCreateImage(newContext);
+        CGContextRef smallContext = CGBitmapContextCreate(nil, 704, 576, 8, 704*4, colorSpace, kCGBitmapByteOrder32Little | kCGImageAlphaPremultipliedFirst);
+        
+     
+        
+        // If image width is too large
+        
+        //
+        
+        //CGContextScaleCTM(newContext, (1/(width/704)), (1/(height/576)));
+        CGContextScaleCTM(newContext, 0.5, 0.5);
+    //    CGContextScaleCTM(smallContext, 0.5, 0.5);
+       
+        
+        
+        
+     //   NSLog(@"Scale Factors %@,%@",(width/(width/1024)), (height/(height/1024)));
+       // CGContextSetInterpolationQuality(newContext, kCGInterpolationHigh);
+        //CGContextSetInterpolationQuality(smallContext, kCGInterpolationHigh);
+        
+    
+       // CGImageRef newImage = CGBitmapContextCreateImage(newContext);
+        
+        
+        
+        CGImageRef newImage2 = CGBitmapContextCreateImage(newContext);
+        
+        CGContextDrawImage(smallContext, CGRectMake(0, 0, 704, 576), newImage2);
+        CGImageRef newImage = CGBitmapContextCreateImage(smallContext);
+        
+       // CGContextDrawImage(smallContext, CGRectMake(0, 0, s_width, s_height), newImage2);
+        //CGImageRef newImage = CGBitmapContextCreateImage(smallContext);
+    
+        
+       // UIImage *image = [UIImage imageWithCGImage:CGImageCreateWithImageInRect(newImage, CGRectMake(0,0,1024, 768))];
         
         CGContextRelease(newContext);
+        CGContextRelease(smallContext);
         CGColorSpaceRelease(colorSpace);
+      
         
         UIImage *image = [UIImage imageWithCGImage:newImage];
-        
+
         // resize image
-        image = [CanvasCamera resizeImage:image toSize:CGSizeMake([_advancedOptions[@"cameraWidth"] floatValue], [_advancedOptions[@"cameraHeight"] floatValue])];
+        // image = [CanvasCamera resizeImage:image toSize:CGSizeMake([_advancedOptions[@"cameraWidth"] floatValue], [_advancedOptions[@"cameraHeight"] floatValue])];
+       
+       // CGRect apple = AVMakeRectWithAspectRatioInsideRect(CGSizeMake(1280, 720), CGRectMake(0,0,1024, 768));
         
-        NSLog(@"Hello Color: %@", _advancedOptions);
         
+        
+      //  image = [CanvasCamera resizeImage:image toSize:CGSizeMake(width/4, height/4)];
+        
+        //image = [CanvasCamera resizeImage:image toRect:apple];
+        //image = [CanvasCamera scaleImageToSize:image toSize:CGSizeMake(1080, 1080)];
+        
+       
+       
         NSData *imageData = UIImageJPEGRepresentation(image, (_compression / 100.0));
 #if 0
         //NSString *encodedString = [imageData base64Encoding];
@@ -586,6 +750,7 @@ typedef enum {
 #endif
         
         CGImageRelease(newImage);
+       CGImageRelease(newImage2);
         CVPixelBufferUnlockBaseAddress(imageBuffer,0);
     }
 }
@@ -772,6 +937,42 @@ typedef enum {
     return [dateFormatter stringFromDate:convertDate];
 }
 
+
+
++ (UIImage *)scaleImageToSize:(UIImage *)image toSize:(CGSize)newSize;
+{
+    
+    CGRect scaledImageRect = CGRectZero;
+    
+    CGFloat aspectWidth = newSize.width / image.size.width;
+    CGFloat aspectHeight = newSize.height / image.size.height;
+    CGFloat aspectRatio = MIN ( aspectWidth, aspectHeight );
+    
+    scaledImageRect.size.width = image.size.width * aspectRatio;
+    scaledImageRect.size.height = image.size.height * aspectRatio;
+    scaledImageRect.origin.x = (newSize.width - scaledImageRect.size.width) / 2.0f;
+    scaledImageRect.origin.y = (newSize.height - scaledImageRect.size.height) / 2.0f;
+    
+    UIGraphicsBeginImageContextWithOptions( newSize, YES, 1 );
+    //[image drawInRect:scaledImageRect];
+    [image drawInRect:CGRectMake( (newSize.width - scaledImageRect.size.width) / 2.0f, (newSize.height - scaledImageRect.size.height) / 2.0f, scaledImageRect.size.width, scaledImageRect.size.height)];
+    UIImage* scaledImage = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    
+    return scaledImage;
+    
+    
+}
+
++ (UIImage *)resizeImage:(UIImage *)image toRect:(CGRect)newSize
+{
+    UIGraphicsBeginImageContext(newSize.size);
+    [image drawInRect:newSize];
+    UIImage* newImage = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    return newImage;
+}
+
 + (UIImage *)resizeImage:(UIImage *)image toSize:(CGSize)newSize
 {
     UIGraphicsBeginImageContext(newSize);
@@ -780,7 +981,6 @@ typedef enum {
     UIGraphicsEndImageContext();
     return newImage;
 }
-
 
 static CGFloat DegreesToRadians(CGFloat degrees) {return degrees * M_PI / 180;};
 
