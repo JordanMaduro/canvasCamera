@@ -84,7 +84,7 @@ typedef enum {
     
     // init parameters - default values
     _quality = 85;
-    _compression = 69;
+    _compression = 90;
     _zoomRatio = 1;
     _destType = DestinationTypeFileURI;
     _encodeType = EncodingTypeJPEG;
@@ -129,13 +129,6 @@ typedef enum {
     }
     NSLog(@"Current Format: %@", [self.device.activeFormat description]);
     
-    if ([self.device lockForConfiguration:nil]){
-        
-        //self.device.activeVideoMinFrameDuration = CMTimeMake(1, 30);
-        
-        
-        [self.device unlockForConfiguration];
-    }
 
     
     
@@ -649,63 +642,29 @@ typedef enum {
         size_t width = CVPixelBufferGetWidth(imageBuffer);
         size_t height = CVPixelBufferGetHeight(imageBuffer);
         
+        float optimal_w = 704;
+        float optimal_h = 576;
+        
         CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
         CGContextRef newContext = CGBitmapContextCreate(baseAddress, width, height, 8, bytesPerRow, colorSpace, kCGBitmapByteOrder32Little | kCGImageAlphaPremultipliedFirst);
         
-        CGContextRef smallContext = CGBitmapContextCreate(nil, 704, 576, 8, 704*4, colorSpace, kCGBitmapByteOrder32Little | kCGImageAlphaPremultipliedFirst);
+        CGContextRef smallContext = CGBitmapContextCreate(nil, optimal_w, optimal_h, 8, 704*4, colorSpace, kCGBitmapByteOrder32Little | kCGImageAlphaPremultipliedFirst);
         
-     
-        
-        // If image width is too large
-        
-        //
-        
-        //CGContextScaleCTM(newContext, (1/(width/704)), (1/(height/576)));
-        CGContextScaleCTM(newContext, 0.5, 0.5);
-    //    CGContextScaleCTM(smallContext, 0.5, 0.5);
-       
-        
-        
-        
-     //   NSLog(@"Scale Factors %@,%@",(width/(width/1024)), (height/(height/1024)));
-       // CGContextSetInterpolationQuality(newContext, kCGInterpolationHigh);
-        //CGContextSetInterpolationQuality(smallContext, kCGInterpolationHigh);
-        
-    
-       // CGImageRef newImage = CGBitmapContextCreateImage(newContext);
-        
-        
+
+        CGContextScaleCTM(newContext, (1/(width/optimal_w)), (1/(height/optimal_h)));
+
         
         CGImageRef newImage2 = CGBitmapContextCreateImage(newContext);
         
-        CGContextDrawImage(smallContext, CGRectMake(0, 0, 704, 576), newImage2);
+        CGContextDrawImage(smallContext, CGRectMake(0, 0, optimal_w, optimal_h), newImage2);
         CGImageRef newImage = CGBitmapContextCreateImage(smallContext);
-        
-       // CGContextDrawImage(smallContext, CGRectMake(0, 0, s_width, s_height), newImage2);
-        //CGImageRef newImage = CGBitmapContextCreateImage(smallContext);
-    
-        
-       // UIImage *image = [UIImage imageWithCGImage:CGImageCreateWithImageInRect(newImage, CGRectMake(0,0,1024, 768))];
-        
+
         CGContextRelease(newContext);
         CGContextRelease(smallContext);
         CGColorSpaceRelease(colorSpace);
       
         
         UIImage *image = [UIImage imageWithCGImage:newImage];
-
-        // resize image
-        // image = [CanvasCamera resizeImage:image toSize:CGSizeMake([_advancedOptions[@"cameraWidth"] floatValue], [_advancedOptions[@"cameraHeight"] floatValue])];
-       
-       // CGRect apple = AVMakeRectWithAspectRatioInsideRect(CGSizeMake(1280, 720), CGRectMake(0,0,1024, 768));
-        
-        
-        
-      //  image = [CanvasCamera resizeImage:image toSize:CGSizeMake(width/4, height/4)];
-        
-        //image = [CanvasCamera resizeImage:image toRect:apple];
-        //image = [CanvasCamera scaleImageToSize:image toSize:CGSizeMake(1080, 1080)];
-        
        
        
         NSData *imageData = UIImageJPEGRepresentation(image, (_compression / 100.0));
