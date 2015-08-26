@@ -106,20 +106,20 @@ typedef enum {
         NSDictionary *jsonData = [command.arguments objectAtIndex:0];
         [self getOptions:jsonData];
         
-       // [self getAdvancedOptions:([jsonData objectForKey:@"advanced"] ? jsonData[@"advanced"] : @{}) : defaultAdvanced];
+        [self getAdvancedOptions:([jsonData objectForKey:@"advanced"] ? jsonData[@"advanced"] : @{}) : defaultAdvanced];
         
     } else {
         [self getAdvancedOptions:@{} :defaultAdvanced];
     
     }
-    
+   
     
     
     // add support for options (fps, capture quality, capture format, etc.)
     self.session = [[AVCaptureSession alloc] init];
     self.session.sessionPreset = AVCaptureSessionPresetPhoto; //AVCaptureSessionPreset352x288; //AVCaptureSessionPresetLow; //AVCaptureSessionPresetPhoto;
-    
-    //if (_advancedOptions[@"preset"]) {
+   
+
         switch ([_advancedOptions[@"preset"] intValue]) {
             case 1:
                 self.session.sessionPreset = AVCaptureSessionPreset352x288;
@@ -157,21 +157,13 @@ typedef enum {
             default:
                 self.session.sessionPreset = AVCaptureSessionPreset640x480;
                 break;
-        }
-   // }
-    
-    //self.session.sessionPreset = AVCaptureSessionPreset640x480; // best for now
-      //self.session.sessionPreset = AVCaptureSessionPresetPhoto;
-  //  self.session.sessionPreset = AVCaptureSessionPresetLow;
-    
-   // self.session.sessionPreset = AVCaptureSessionPresetiFrame1280x720;
-    
+    }
     
     self.device = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
     self.input = [AVCaptureDeviceInput deviceInputWithDevice:self.device error:nil];
     
 
-    
+    /*
     for (AVCaptureDeviceFormat *mat in self.device.formats)
     {
         NSLog(@"Format: %@", [mat description]);
@@ -179,16 +171,9 @@ typedef enum {
     }
     NSLog(@"Current Format: %@", [self.device.activeFormat description]);
     
-    if ([self.device lockForConfiguration:nil]){
-        
-        //self.device.activeVideoMinFrameDuration = CMTimeMake(1, 30);
-        
-        
-        [self.device unlockForConfiguration];
-    }
-
+    */
     
-    
+ 
     self.output = [[AVCaptureVideoDataOutput alloc] init];
     
     self.output.alwaysDiscardsLateVideoFrames = YES;
