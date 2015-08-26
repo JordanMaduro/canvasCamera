@@ -1,4 +1,4 @@
-//
+cordova.define("com.jordanmaduro.cordova.plugin.canvascamera2.CanvasCamera", function(require, exports, module) { //
 //  CanvasCamera.js
 //  PhoneGap iOS Cordova Plugin to capture Camera streaming into a HTML5 Canvas or an IMG tag.
 //
@@ -26,7 +26,18 @@ cordova.define("cordova/plugin/CanvasCamera", function(require, exports, module)
         var _temp_ctx = _temp_canvas.getContext('2d');
     };
 
-	
+   function throttle (callback, limit) {
+       var wait = false;
+       return function () {
+       if (!wait) {
+               callback.call();
+               wait = true;
+               setTimeout(function () {
+                          wait = false;
+                  }, limit);
+            }
+       }
+   }
               
     CanvasCamera.prototype.initialize = function(obj) {
         var _this = this;
@@ -38,8 +49,8 @@ cordova.define("cordova/plugin/CanvasCamera", function(require, exports, module)
         
         
 
-        this._camImage.onload = function() {
-      
+        this._camImage.onload = throttle(function() {
+                                        
             _this._context.clearRect(0, 0, _this._width, _this._height);
             if (window.orientation == 90
                || window.orientation == -90)
@@ -48,8 +59,7 @@ cordova.define("cordova/plugin/CanvasCamera", function(require, exports, module)
                 // rotate 90
                 _this._context.translate(_this._width/2, _this._height/2);
                 _this._context.rotate((90 - window.orientation) *Math.PI/180);
-                //_this._context.drawImage(_this._camImage, 0, 0, _this._camImage.width, _this._camImage.height, -_this._width/2, -_this._height/2, _this._width, _this._height);
-                _this._context.drawImage(_this._camImage, 0, 0, _this._camImage.width, _this._camImage.width, -_this._width/2, -_this._height/2, _this._width, _this._height);
+               _this._context.drawImage(_this._camImage, 0, 0, _this._camImage.width, _this._camImage.width, -_this._width/2, -_this._height/2, _this._width, _this._height);
                 
                 
                 //
@@ -62,15 +72,11 @@ cordova.define("cordova/plugin/CanvasCamera", function(require, exports, module)
                 _this._context.translate(_this._width/2, _this._height/2);
                 _this._context.rotate((90 - window.orientation)*Math.PI/180);
                 _this._context.drawImage(_this._camImage, 0, 0, _this._camImage.width, _this._camImage.height, -_this._height/2, -_this._width/2, _this._height, _this._width);
-                //_this._context.drawImage(_this._camImage, 0, 0, _this._camImage.width, _this._camImage.height,  -_this._camImage.width / 2, -_this._camImage.height/2, 1280, 720);
-                
-                //
-              
             
                 _this._context.restore();
             }
               
-        };
+        },16); //60fps max
 
         // register orientation change event
         window.addEventListener('orientationchange', this.doOrientationChange);
@@ -79,10 +85,6 @@ cordova.define("cordova/plugin/CanvasCamera", function(require, exports, module)
 
 
     CanvasCamera.prototype.start = function(options) {
-    	  //if (options && options.advanced) {
-    	  	  //this._cameraWidth = options.advanced.cameraWidth || this._cameraWidth;
-        	 // this._cameraHeight = options.advanced.cameraHeight || this._cameraHeight;
-    	  //}
     
         cordova.exec(false, false, "CanvasCamera", "startCapture", [options]);
     };
@@ -124,9 +126,7 @@ cordova.define("cordova/plugin/CanvasCamera", function(require, exports, module)
 
         this._obj.width = windowWidth;// * pixelRatio;   /// resolution of canvas
         this._obj.height = windowHeight;// * pixelRatio;
-        //this._temp_canvas.width = this._obj.width;
-        //this._temp_canvas.height = this._obj.height;
-               
+
             
         this._obj.style.width = windowWidth + 'px';   /// CSS size of canvas
         this._obj.style.height = windowHeight + 'px';
@@ -188,3 +188,5 @@ CanvasCamera.CameraPosition = CameraPosition;
 CanvasCamera.FlashMode = FlashMode;
 
 module.exports = CanvasCamera;
+
+});

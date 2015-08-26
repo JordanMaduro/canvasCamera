@@ -84,7 +84,7 @@ typedef enum {
     
     // init parameters - default values
     _quality = 85;
-    _compression = 90;
+    _compression = 69;
     _zoomRatio = 1;
     _destType = DestinationTypeFileURI;
     _encodeType = EncodingTypeJPEG;
@@ -95,7 +95,8 @@ typedef enum {
     
     NSDictionary * defaultAdvanced = @{
         @"cameraWidth":@704.0,
-        @"cameraHeight":@576.0
+        @"cameraHeight":@576.0,
+        @"preset": @2
     };
     
     
@@ -105,16 +106,65 @@ typedef enum {
         NSDictionary *jsonData = [command.arguments objectAtIndex:0];
         [self getOptions:jsonData];
         
-        [self getAdvancedOptions:([jsonData objectForKey:@"advanced"] ? jsonData[@"advanced"] : @{}) : defaultAdvanced];
+       // [self getAdvancedOptions:([jsonData objectForKey:@"advanced"] ? jsonData[@"advanced"] : @{}) : defaultAdvanced];
         
+    } else {
+        [self getAdvancedOptions:@{} :defaultAdvanced];
+    
     }
+    
+    
     
     // add support for options (fps, capture quality, capture format, etc.)
     self.session = [[AVCaptureSession alloc] init];
     self.session.sessionPreset = AVCaptureSessionPresetPhoto; //AVCaptureSessionPreset352x288; //AVCaptureSessionPresetLow; //AVCaptureSessionPresetPhoto;
     
-    self.session.sessionPreset = AVCaptureSessionPreset640x480; // best for now
-  // self.session.sessionPreset = AVCaptureSessionPresetPhoto;
+    //if (_advancedOptions[@"preset"]) {
+        switch ([_advancedOptions[@"preset"] intValue]) {
+            case 1:
+                self.session.sessionPreset = AVCaptureSessionPreset352x288;
+                break;
+            case 2:
+                self.session.sessionPreset = AVCaptureSessionPreset640x480;
+                break;
+            case 3:
+                self.session.sessionPreset = AVCaptureSessionPreset1280x720;
+                break;
+            case 4:
+                self.session.sessionPreset = AVCaptureSessionPreset1920x1080;
+                break;
+            case 5:
+                self.session.sessionPreset = AVCaptureSessionPresetPhoto;
+                break;
+            case 6:
+                self.session.sessionPreset = AVCaptureSessionPresetLow;
+                break;
+            case 7:
+                self.session.sessionPreset = AVCaptureSessionPresetMedium;
+                break;
+            case 8:
+                self.session.sessionPreset = AVCaptureSessionPresetHigh;
+                break;
+            case 9:
+                self.session.sessionPreset = AVCaptureSessionPresetiFrame960x540;
+                break;
+            case 10:
+                self.session.sessionPreset = AVCaptureSessionPresetiFrame1280x720;
+                break;
+            case 11:
+                self.session.sessionPreset = AVCaptureSessionPresetInputPriority;
+                break;
+            default:
+                self.session.sessionPreset = AVCaptureSessionPreset640x480;
+                break;
+        }
+   // }
+    
+    //self.session.sessionPreset = AVCaptureSessionPreset640x480; // best for now
+      //self.session.sessionPreset = AVCaptureSessionPresetPhoto;
+  //  self.session.sessionPreset = AVCaptureSessionPresetLow;
+    
+   // self.session.sessionPreset = AVCaptureSessionPresetiFrame1280x720;
     
     
     self.device = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
@@ -129,6 +179,13 @@ typedef enum {
     }
     NSLog(@"Current Format: %@", [self.device.activeFormat description]);
     
+    if ([self.device lockForConfiguration:nil]){
+        
+        //self.device.activeVideoMinFrameDuration = CMTimeMake(1, 30);
+        
+        
+        [self.device unlockForConfiguration];
+    }
 
     
     
@@ -252,8 +309,8 @@ typedef enum {
             {
                 [self.device lockForConfiguration:nil];
             
-                [self.device rampToVideoZoomFactor:_zoomRatio withRate:4];
-                //self.device.videoZoomFactor = _zoomRatio;
+                //[self.device rampToVideoZoomFactor:_zoomRatio withRate:4];
+                self.device.videoZoomFactor = _zoomRatio;
                 
                 [self.device unlockForConfiguration];
                 
@@ -275,8 +332,12 @@ typedef enum {
         {
             // success callback
             pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@""];
-            resultJS = [pluginResult toSuccessCallbackString:command.callbackId];
-            [self writeJavascript:resultJS];
+            //resultJS = [pluginResult toSuccessCallbackString:command.callbackId];
+           
+          //  resultJS = [self.commandDelegate sendPluginResult:pluginResult callbackId:command.c
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            // [self writeJavascript:resultJS];
+          //  [self.commandDelegate evalJs:resultJS];
         }
         else
         {
@@ -642,29 +703,65 @@ typedef enum {
         size_t width = CVPixelBufferGetWidth(imageBuffer);
         size_t height = CVPixelBufferGetHeight(imageBuffer);
         
-        float optimal_w = 704;
-        float optimal_h = 576;
-        
         CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
         CGContextRef newContext = CGBitmapContextCreate(baseAddress, width, height, 8, bytesPerRow, colorSpace, kCGBitmapByteOrder32Little | kCGImageAlphaPremultipliedFirst);
         
-        CGContextRef smallContext = CGBitmapContextCreate(nil, optimal_w, optimal_h, 8, 704*4, colorSpace, kCGBitmapByteOrder32Little | kCGImageAlphaPremultipliedFirst);
+        CGContextRef smallContext = CGBitmapContextCreate(nil, 704, 576, 8, 704*4, colorSpace, kCGBitmapByteOrder32Little | kCGImageAlphaPremultipliedFirst);
         
-
-        CGContextScaleCTM(newContext, (1/(width/optimal_w)), (1/(height/optimal_h)));
-
+     
+        
+        // If image width is too large
+        
+        //
+        
+        //CGContextScaleCTM(newContext, (1/(width/704)), (1/(height/576)));
+        CGContextScaleCTM(newContext, 0.5, 0.5);
+    //    CGContextScaleCTM(smallContext, 0.5, 0.5);
+       
+        
+        
+        
+     //   NSLog(@"Scale Factors %@,%@",(width/(width/1024)), (height/(height/1024)));
+       // CGContextSetInterpolationQuality(newContext, kCGInterpolationHigh);
+        //CGContextSetInterpolationQuality(smallContext, kCGInterpolationHigh);
+        
+    
+       // CGImageRef newImage = CGBitmapContextCreateImage(newContext);
+        
+        
         
         CGImageRef newImage2 = CGBitmapContextCreateImage(newContext);
         
-        CGContextDrawImage(smallContext, CGRectMake(0, 0, optimal_w, optimal_h), newImage2);
+        CGContextDrawImage(smallContext, CGRectMake(0, 0, 704, 576), newImage2);
         CGImageRef newImage = CGBitmapContextCreateImage(smallContext);
-
+        
+       // CGContextDrawImage(smallContext, CGRectMake(0, 0, s_width, s_height), newImage2);
+        //CGImageRef newImage = CGBitmapContextCreateImage(smallContext);
+    
+        
+       // UIImage *image = [UIImage imageWithCGImage:CGImageCreateWithImageInRect(newImage, CGRectMake(0,0,1024, 768))];
+        
         CGContextRelease(newContext);
         CGContextRelease(smallContext);
         CGColorSpaceRelease(colorSpace);
       
         
         UIImage *image = [UIImage imageWithCGImage:newImage];
+
+        
+        // resize image
+        // resize image
+        //image = [CanvasCamera resizeImage:image toSize:CGSizeMake([_advancedOptions[@"cameraWidth"] floatValue], [_advancedOptions[@"cameraHeight"] floatValue])];
+       
+       // CGRect apple = AVMakeRectWithAspectRatioInsideRect(CGSizeMake(1280, 720), CGRectMake(0,0,1024, 768));
+        
+        
+        
+      //  image = [CanvasCamera resizeImage:image toSize:CGSizeMake(width/4, height/4)];
+        
+        //image = [CanvasCamera resizeImage:image toRect:apple];
+        //image = [CanvasCamera scaleImageToSize:image toSize:CGSizeMake(1080, 1080)];
+        
        
        
         NSData *imageData = UIImageJPEGRepresentation(image, (_compression / 100.0));
@@ -687,7 +784,7 @@ typedef enum {
                 
                 NSString *imagePath = [CanvasCamera getFilePath:[NSString stringWithFormat:@"uuid%d", i] ext:@"jpg"];
                 
-                if (i > 10)
+                if (i > 20)
                 {
                     NSString *prevPath = [CanvasCamera getFilePath:[NSString stringWithFormat:@"uuid%d", i-10] ext:@"jpg"];
                     NSError *error = nil;
